@@ -106,8 +106,6 @@ MovingObject.prototype.isCollidedWith = function(that) {
 };
 
 MovingObject.prototype.collideWith = function(that) {
-  // this.game.remove(this);
-  // this.game.remove(that);
 };
 
 module.exports = MovingObject;
@@ -166,9 +164,8 @@ module.exports = Util;
 
 const Game = __webpack_require__(5);
 
-function GameView(ctx) {
-  this.game = new Game();
-  this.ctx = ctx;
+function GameView(dim) {
+  this.game = new Game(dim);
 }
 
 GameView.prototype.start = function(ctx) {
@@ -190,17 +187,19 @@ const Util = __webpack_require__(2);
 const Ship = __webpack_require__(1);
 
 function Asteroid(pos, game) {
-  this.vel = Util.randomVec(5);
-  MovingObject.call(this, pos, this.vel, 40, 'grey', game);
+  const mag = 8 * Math.random();
+  const vel = Util.randomVec(mag);
+  const size = 40;
+  const color = 'grey';
+  MovingObject.call(this, pos, vel, size, color, game);
 }
 
+Util.inherits(Asteroid, MovingObject);
+
 Asteroid.prototype.collideWith = function(otherObject) {
-  if (otherObject instanceof Ship) {
-    otherObject.relocate();
-  }
+  if (otherObject instanceof Ship) otherObject.relocate();
 };
 
-Util.inherits(Asteroid, MovingObject);
 module.exports = Asteroid;
 
 
@@ -211,9 +210,9 @@ module.exports = Asteroid;
 const Asteroid = __webpack_require__(4);
 const Ship = __webpack_require__(1);
 
-function Game() {
-  this.DIM_X = 800;
-  this.DIM_Y = 800;
+function Game(dim) {
+  this.DIM_X = dim[0];
+  this.DIM_Y = dim[1];
   this.NUM_ASTEROIDS = 6;
   this.asteroids = [];
   this.addAsteroids();
@@ -221,7 +220,7 @@ function Game() {
 }
 
 Game.prototype.randomPosition = function() {
-  return [Math.random() * 800, Math.random() * 800];
+  return [Math.random() * this.DIM_X, Math.random() * this.DIM_Y];
 };
 
 Game.prototype.addAsteroids = function() {
@@ -232,7 +231,7 @@ Game.prototype.addAsteroids = function() {
 };
 
 Game.prototype.draw = function(ctx) {
-  ctx.clearRect(0, 0, 800, 800);
+  ctx.clearRect(0, 0, this.DIM_X, this.DIM_Y);
   let all = this.allObjects();
   all.forEach(obj => obj.draw(ctx));
 };
@@ -242,22 +241,16 @@ Game.prototype.moveObjects = function() {
 };
 
 Game.prototype.wrap = function(pos) {
-  if (pos[0] > this.DIM_X) {
-    pos[0] = 0;
-  }else if (pos[0] < 0) {
-    pos[0] = this.DIM_X;
-  }
-  if (pos[1] > this.DIM_Y) {
-    pos[1] = 0;
-  }else if (pos[1] < 0) {
-    pos[1] = this.DIM_Y;
-  }
+  if (pos[0] > this.DIM_X) pos[0] = 0;
+  if (pos[0] < 0) pos[0] = this.DIM_X;
+  if (pos[1] > this.DIM_Y) pos[1] = 0;
+  if (pos[1] < 0) pos[1] = this.DIM_Y;
+
   return pos;
 };
 
 Game.prototype.checkCollisions = function() {
   this.allObjects().forEach((obj1, idx1) => {
-    // this.allObjects().slice(idx + 1).forEach((obj2) => {
     this.allObjects().forEach((obj2, idx2) => {
       if (idx1 === idx2) return false;
       if (obj1.isCollidedWith(obj2)) {
@@ -292,7 +285,8 @@ const GameView = __webpack_require__(3);
 
 document.addEventListener("DOMContentLoaded", function(event) {
     const ctx = document.getElementById('game-canvas').getContext('2d');
-    new GameView().start(ctx);
+    const dim = [ctx.canvas.width, ctx.canvas.height]
+    new GameView(dim).start(ctx);
 });
 
 
